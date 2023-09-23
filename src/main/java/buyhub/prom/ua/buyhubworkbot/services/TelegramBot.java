@@ -1,7 +1,9 @@
 package buyhub.prom.ua.buyhubworkbot.services;
 
 import buyhub.prom.ua.buyhubworkbot.configs.BotConfig;
+import buyhub.prom.ua.buyhubworkbot.models.Employee;
 import buyhub.prom.ua.buyhubworkbot.models.Product;
+import buyhub.prom.ua.buyhubworkbot.repositories.EmployeeRepository;
 import buyhub.prom.ua.buyhubworkbot.repositories.ProductRepository;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -19,11 +21,13 @@ import java.util.List;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
     private final ProductRepository productRepository;
+    private final EmployeeRepository employeeRepository;
     private final BotConfig config;
 
-    public TelegramBot(BotConfig config, ProductRepository productRepository) {
+    public TelegramBot(BotConfig config, ProductRepository productRepository, EmployeeRepository employeeRepository) {
         this.config = config;
         this.productRepository = productRepository;
+        this.employeeRepository = employeeRepository;
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Начальное приветствие"));
         listOfCommands.add(new BotCommand("/tags", "Привести теги к нужному формату"));
@@ -32,6 +36,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/deleteproductinfo", "Удалить информацию о товаре"));
         listOfCommands.add(new BotCommand("/editproductinfo", "Изменить информацию о товаре"));
         listOfCommands.add(new BotCommand("/getlistproducts", "Список всех товаров"));
+        listOfCommands.add(new BotCommand("/addemployee", "Добавить сотрудника"));
+        listOfCommands.add(new BotCommand("/removeemployee", "Уволить сотрудника"));
+        listOfCommands.add(new BotCommand("/getlistemployees", "Список сотрудников"));
+        listOfCommands.add(new BotCommand("/getemployeeinfo", "Получить информацию о сотруднике"));
         listOfCommands.add(new BotCommand("/help", "Помощь по командам"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -54,25 +62,85 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Введите теги");
             else if (message.startsWith("/help") && message.length() == 5)
                 helpCommandReceived(chatId);
-            else if (message.startsWith("/getproductinfo "))
+            else if (message.startsWith("/getproductinfo ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 getProductInfo(chatId, update.getMessage().getText());
-            else if (message.startsWith("/getproductinfo"))
+            } else if (message.startsWith("/getproductinfo")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 sendMessage(chatId, "Введите название товара");
-            else if (message.startsWith("/createproductinfo "))
+            } else if (message.startsWith("/createproductinfo ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 createProductInfo(chatId, update.getMessage().getText());
-            else if (message.startsWith("/createproductinfo"))
+            } else if (message.startsWith("/createproductinfo")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 sendMessage(chatId, "Введите информацию о товаре");
-            else if (message.startsWith("/getlistproducts"))
+            } else if (message.startsWith("/getlistproducts")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 getListProducts(chatId);
-            else if (message.startsWith("/deleteproductinfo "))
+            } else if (message.startsWith("/deleteproductinfo ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 deleteProductInfo(chatId, Long.parseLong(update.getMessage().getText().substring(19)));
-            else if (message.startsWith("/deleteproductinfo"))
+            } else if (message.startsWith("/deleteproductinfo")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 sendMessage(chatId, "Введите ID товара");
-            else if (message.startsWith("/editproductinfo "))
+            } else if (message.startsWith("/editproductinfo ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 editProductInfo(chatId, update.getMessage().getText());
-            else if (message.startsWith("/editproductinfo"))
+            } else if (message.startsWith("/editproductinfo")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
                 sendMessage(chatId, "Введите данные");
-            else
+            } else if (message.startsWith("/addemployee ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                addEmployee(chatId, update.getMessage().getText());
+            } else if (message.startsWith("/removeemployee ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                removeEmployee(chatId, update.getMessage().getText());
+            } else if (message.startsWith("/getlistemployees")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                getListEmployees(chatId);
+            } else if (message.startsWith("/getemployeeinfo ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                getEmployeeInfo(chatId, update.getMessage().getText());
+            } else
                 sendMessage(chatId, "На данный момент такой команды не существует.");
         }
     }
@@ -95,6 +163,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 "/tags [список тегов] - на вход команде дается скопированный список тегов из карточки на проме (манипуляций с тегами не должно проводиться никаких)," +
                 " а на выходе получаем преобразованный к нужному виду список тегов который можно сразу же вставлять в карточку.\n" +
                 "\n\n" +
+                "/getlistproducts - получить список всех доступных товаров на данный момент" +
+                "\n\n\n" +
                 "/getproductinfo [название] - поиск тегов и категорий для карточки по названию." +
                 "\n\n" +
                 "Пример: /getproductinfo Обогреватель\n" +
@@ -213,6 +283,49 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendMessage(chatId, "Неверный выбор");
                 break;
         }
+    }
+
+    private void addEmployee(long chatId, String text) {
+        String[] textArr = text.substring(13).split(", ");
+        String username = textArr[0];
+        String name = textArr[1];
+        if (employeeRepository.findByUsername(username).isPresent())
+            sendMessage(chatId, "Данный сотрудник уже существует");
+        Employee employee = new Employee();
+        employee.setName(name);
+        employee.setUsername(username);
+        employeeRepository.save(employee);
+        sendMessage(chatId, "Сотрудник " + employee.getName() + " успешно добавлен.");
+    }
+
+    private void removeEmployee(long chatId, String text) {
+        text = text.substring(16);
+        String username = text;
+        if (employeeRepository.findByUsername(username).isEmpty())
+            sendMessage(chatId, "Данного сотрудника не существует");
+        Employee employee = employeeRepository.findByUsername(username).orElseThrow();
+        employeeRepository.deleteById(employee.getId());
+        sendMessage(chatId, "Сотрудник " + employee.getName() + " удален.");
+    }
+
+    private void getListEmployees(long chatId) {
+        List<Employee> employees = (List<Employee>) employeeRepository.findAll();
+        List<String> employeeNames = new ArrayList<>();
+        for (Employee e : employees) {
+            employeeNames.add(e.getName());
+        }
+        String productNamesString = employeeNames.toString();
+        sendMessage(chatId, productNamesString.substring(1, productNamesString.length() - 1));
+    }
+
+    private void getEmployeeInfo(long chatId, String text) {
+        String name = text.substring(17);
+        if (employeeRepository.findByName(name).isEmpty())
+            sendMessage(chatId, "Такого сотрудника нету");
+        Employee employee = employeeRepository.findByName(name).orElseThrow();
+        sendMessage(chatId, "ID сотрудника: " + employee.getId() + "\n\n" +
+                "Имя сотрудника: " + employee.getName() + "\n\n" +
+                "Telegram ID: " + employee.getUsername());
     }
 
     private void sendMessage(long chatId, String text) {
