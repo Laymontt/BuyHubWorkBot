@@ -23,11 +23,15 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final ProductRepository productRepository;
     private final EmployeeRepository employeeRepository;
     private final BotConfig config;
+    private final ProductService productService;
+    private final EmployeeService employeeService;
 
-    public TelegramBot(BotConfig config, ProductRepository productRepository, EmployeeRepository employeeRepository) {
+    public TelegramBot(BotConfig config, ProductRepository productRepository, EmployeeRepository employeeRepository, ProductService productService, EmployeeService employeeService) {
         this.config = config;
         this.productRepository = productRepository;
         this.employeeRepository = employeeRepository;
+        this.productService = productService;
+        this.employeeService = employeeService;
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Начальное приветствие"));
         listOfCommands.add(new BotCommand("/tags", "Привести теги к нужному формату"));
@@ -161,33 +165,60 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, "Список доступных команд: \n" +
                 "\n" +
                 "/tags [список тегов] - на вход команде дается скопированный список тегов из карточки на проме (манипуляций с тегами не должно проводиться никаких)," +
-                " а на выходе получаем преобразованный к нужному виду список тегов который можно сразу же вставлять в карточку.\n" +
-                "\n\n" +
-                "/getlistproducts - получить список всех доступных товаров на данный момент" +
-                "\n\n\n" +
+                " а на выходе получаем преобразованный к нужному виду список тегов, который можно сразу же вставлять в карточку.\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
+                "/getlistproducts - получить список всех доступных товаров на данный момент\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
                 "/getproductinfo [название] - поиск тегов и категорий для карточки по названию." +
                 "\n\n" +
                 "Пример: /getproductinfo Обогреватель\n" +
-                "\n\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
                 "/createproductinfo [название] [категории] [теги (в преобразованном виде)]" +
                 "\n\n" +
                 "Пример:\n\n" +
-                "/createproductinfo Шлем, Шоломи, бронешоломи та каски, Військторг, Аксесуари та комплектуючі до екіпірування та спорядження, Бронешлем, Бронешлем кевларовый, Шлемы, бронешлемы и каски, Военный шлем, Кевларовый шлем, Баллистический шлем, Шлем тактический, Шлем боевой, Боевой шлем, Каски и шлема, Тактический шлем для страйкбола, Тактический шлем военный, Шлем каска кевлар, Шлем кевлар, Кевлар каска, Кевлар, Шлемы и каски кевларовые, Защитное снаряжение, Тактический военный шлем, Спортивное защитное снаряжение, Шлем 3а класса, Шлем 3 уровень, Шлем, Шлем 3а, Военное обмундирование, Военное снаряжение, Обмундирование, Охота военное обмундирование, Военное обмундирование магазин, Тактический защитный военный шлем, пуленепробиваемый тактический шлем, кевларовый шлем класса iiia, Тактический шлем сша, Армейский шлем, Шлем армейский 3 класса, Спортивные защитное снаряжение" +
-                "\n\n\n" +
+                "/createproductinfo Шлем, Шоломи, бронешоломи та каски, Військторг, Аксесуари та комплектуючі до екіпірування та спорядження, Бронешлем, Бронешлем кевларовый, Шлемы, бронешлемы и каски, Военный шлем, Кевларовый шлем, Баллистический шлем, Шлем тактический, Шлем боевой, Боевой шлем, Каски и шлема, Тактический шлем для страйкбола, Тактический шлем военный, Шлем каска кевлар, Шлем кевлар, Кевлар каска, Кевлар, Шлемы и каски кевларовые, Защитное снаряжение, Тактический военный шлем, Спортивное защитное снаряжение, Шлем 3а класса, Шлем 3 уровень, Шлем, Шлем 3а, Военное обмундирование, Военное снаряжение, Обмундирование, Охота военное обмундирование, Военное обмундирование магазин, Тактический защитный военный шлем, пуленепробиваемый тактический шлем, кевларовый шлем класса iiia, Тактический шлем сша, Армейский шлем, Шлем армейский 3 класса, Спортивные защитное снаряжение\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
                 "/deleteproductinfo [ID] - удаляет информацию о товаре по айдишнику (айди можно узнать с помощью /getproductinfo)" +
                 "\n\n" +
                 "Пример:\n\n" +
                 "/deleteproductinfo 13\n" +
-                "\n\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
                 "/editproductinfo [ID] [Параметр (1-3, 1 - название, 2 - категории, 3 - теги)] [Значение]" +
                 "\n\n" +
                 "Пример:\n\n" +
-                "/editproductinfo 1, 1, Тест");
+                "/editproductinfo 1, 1, Тест\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
+                "/getlistemployees - получить список всех сотрудников\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
+                "/addemployee [TG_ID] [Name] - добавить сотрудника" +
+                "\n\n" +
+                "Пример:\n\n" +
+                "/addemployee laymontt, Алексей\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
+                "/removeemployee [TG_ID] - удалить сотрудника" +
+                "\n\n" +
+                "Пример:\n\n" +
+                "/removeemployee laymontt\n" +
+                "----------------------------------------------------------------------------------------------------" +
+                "\n" +
+                "/getemployeeinfo [Name] - получить информацию о сотруднике" +
+                "\n\n" +
+                "Пример:\n\n" +
+                "/getemployeeinfo Алексей");
     }
 
     private void createProductInfo(long chatId, String text) {
         String[] productInfo = text.substring(19).split(", ");
         String productName = productInfo[0];
+
         List<String> categories = new ArrayList<>();
         for (int i = 1; i < 5; i++)
             categories.add(productInfo[i]);
@@ -198,18 +229,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             tags.add(productInfo[i]);
         String tagsString = tags.toString();
 
-        if (productRepository.findByName(productInfo[0]).isPresent()) {
-            sendMessage(chatId, "Такой товар уже есть");
-            return;
-        }
-
-        Product product = new Product();
-        product.setName(productName);
-        product.setCategories(categoriesString.substring(1, categoriesString.length() - 1));
-        product.setTags(tagsString.substring(1, tagsString.length() - 1));
-
-        productRepository.save(product);
-        sendMessage(chatId, "Информация о товаре добавлена в базу данных");
+        sendMessage(chatId, productService.createProductInfo(productName, categoriesString, tagsString));
     }
 
     private void getProductInfo(long chatId, String text) {
@@ -218,7 +238,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Информации об этом товаре нет");
             return;
         }
-        Product product = productRepository.findByName(productName).orElseThrow();
+        Product product = (Product) productService.getProductInfo(productName);
         sendMessage(chatId, "ID товара: " + product.getId() + "\n\n" +
                 "Название товара: " + product.getName() + "\n\n" +
                 "Категории товара: " + product.getCategories() + "\n\n" +
@@ -226,103 +246,40 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void getListProducts(long chatId) {
-        List<Product> products = (List<Product>) productRepository.findAll();
-        List<String> productNames = new ArrayList<>();
-        for (Product p : products) {
-            productNames.add(p.getName());
-        }
-        String productNamesString = productNames.toString();
-        sendMessage(chatId, productNamesString.substring(1, productNamesString.length() - 1));
+        sendMessage(chatId, productService.getListProducts().toString());
     }
 
     private void deleteProductInfo(long chatId, long id) {
-        if (productRepository.findById(id).isEmpty())
-            sendMessage(chatId, "Информации о данном товаре нет.");
-        Product product = productRepository.findById(id).orElseThrow();
-        productRepository.deleteById(id);
-        sendMessage(chatId, "Информация о товаре " + product.getName() + " успешно удалена.");
+        String productName = productService.deleteProductInfo(id).toString();
+        sendMessage(chatId, "Информация о товаре " + productName + " успешно удалена.");
     }
 
     private void editProductInfo(long chatId, String text) {
         String[] textArr = text.substring(17).split(", ");
-        String id = textArr[0];
-
-        if (productRepository.findById(Long.parseLong(id)).isEmpty())
-            sendMessage(chatId, "Информации о данном товаре нету");
-
-        String choice = textArr[1];
-        Product product = productRepository.findById(Long.parseLong(id)).orElseThrow();
-        switch (choice) {
-            case "1":
-                String newName = textArr[2];
-                product.setName(newName);
-                productRepository.save(product);
-                sendMessage(chatId, "Название товара успешно изменено.\nНовое название товара: " + product.getName());
-                break;
-            case "2":
-                List<String> categories = new ArrayList<>();
-                for (int i = 2; i < textArr.length; i++)
-                    categories.add(textArr[i]);
-                String categoriesString = categories.toString();
-                categoriesString = categoriesString.substring(1, categoriesString.length() - 1);
-                product.setCategories(categoriesString);
-                productRepository.save(product);
-                sendMessage(chatId, "Категории товара успешно изменены.\n Новое название товара: " + product.getCategories());
-                break;
-            case "3":
-                List<String> tags = new ArrayList<>();
-                for (int i = 2; i < textArr.length; i++)
-                    tags.add(textArr[i]);
-                String tagsString = tags.toString();
-                tagsString = tagsString.substring(1, tagsString.length() - 1);
-                product.setTags(tagsString);
-                productRepository.save(product);
-                sendMessage(chatId, "Теги товара успешно изменены.\n Новые теги товара: " + product.getTags());
-                break;
-            default:
-                sendMessage(chatId, "Неверный выбор");
-                break;
-        }
+        String answer = productService.editProductInfo(textArr).toString();
+        sendMessage(chatId, answer);
     }
 
     private void addEmployee(long chatId, String text) {
-        String[] textArr = text.substring(13).split(", ");
-        String username = textArr[0];
-        String name = textArr[1];
-        if (employeeRepository.findByUsername(username).isPresent())
-            sendMessage(chatId, "Данный сотрудник уже существует");
-        Employee employee = new Employee();
-        employee.setName(name);
-        employee.setUsername(username);
-        employeeRepository.save(employee);
-        sendMessage(chatId, "Сотрудник " + employee.getName() + " успешно добавлен.");
+        String employeeName = employeeService.addEmployee(text);
+        sendMessage(chatId, "Сотрудник " + employeeName + " успешно добавлен.");
     }
 
     private void removeEmployee(long chatId, String text) {
-        text = text.substring(16);
-        String username = text;
-        if (employeeRepository.findByUsername(username).isEmpty())
-            sendMessage(chatId, "Данного сотрудника не существует");
-        Employee employee = employeeRepository.findByUsername(username).orElseThrow();
-        employeeRepository.deleteById(employee.getId());
-        sendMessage(chatId, "Сотрудник " + employee.getName() + " удален.");
+        String employeeName = employeeService.removeEmployee(text);
+        sendMessage(chatId, "Сотрудник " + employeeName + " удален.");
     }
 
     private void getListEmployees(long chatId) {
-        List<Employee> employees = (List<Employee>) employeeRepository.findAll();
-        List<String> employeeNames = new ArrayList<>();
-        for (Employee e : employees) {
-            employeeNames.add(e.getName());
-        }
-        String productNamesString = employeeNames.toString();
-        sendMessage(chatId, productNamesString.substring(1, productNamesString.length() - 1));
+        String employeeNamesString = employeeService.getListEmployees();
+        sendMessage(chatId, employeeNamesString.substring(1, employeeNamesString.length() - 1));
     }
 
     private void getEmployeeInfo(long chatId, String text) {
         String name = text.substring(17);
         if (employeeRepository.findByName(name).isEmpty())
             sendMessage(chatId, "Такого сотрудника нету");
-        Employee employee = employeeRepository.findByName(name).orElseThrow();
+        Employee employee = employeeService.getEmployeeInfo(name);
         sendMessage(chatId, "ID сотрудника: " + employee.getId() + "\n\n" +
                 "Имя сотрудника: " + employee.getName() + "\n\n" +
                 "Telegram ID: " + employee.getUsername());
