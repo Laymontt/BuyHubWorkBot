@@ -59,15 +59,15 @@ public class ProductService {
         if (productRepository.findById(Long.parseLong(id)).isEmpty())
             return "Информации о данном товаре нету";
 
-        String choice = textArr[1];
+        String parameter = textArr[1];
         Product product = productRepository.findById(Long.parseLong(id)).orElseThrow();
-        switch (choice) {
-            case "1":
+        switch (parameter) {
+            case "Название":
                 String newName = textArr[2];
                 product.setName(newName);
                 productRepository.save(product);
                 return "Название товара успешно изменено.\nНовое название товара: " + product.getName();
-            case "2":
+            case "Категории":
                 List<String> categories = new ArrayList<>();
                 for (int i = 2; i < textArr.length; i++)
                     categories.add(textArr[i]);
@@ -76,7 +76,7 @@ public class ProductService {
                 product.setCategories(categoriesString);
                 productRepository.save(product);
                 return "Категории товара успешно изменены.\nНовые категории товара: " + product.getCategories();
-            case "3":
+            case "Теги":
                 List<String> tags = new ArrayList<>();
                 for (int i = 2; i < textArr.length; i++)
                     tags.add(textArr[i]);
@@ -86,7 +86,10 @@ public class ProductService {
                 productRepository.save(product);
                 return "Теги товара успешно изменены.\nНовые теги товара: " + product.getTags();
             default:
-                return "Неверный выбор";
+                return "Выберите один из следующих параметров:\n\n" +
+                        "1. Название\n" +
+                        "2. Категории\n" +
+                        "3. Теги";
         }
     }
 }
