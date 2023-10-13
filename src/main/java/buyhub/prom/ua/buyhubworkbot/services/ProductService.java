@@ -25,7 +25,7 @@ public class ProductService {
         product.setTags(tags.substring(1, tags.length() - 1));
 
         productRepository.save(product);
-        return "Информация о товаре добавлена в базу данных";
+        return "Информация о товаре " + "[ID: " + product.getId() + "] " + product.getName() + " добавлена в базу данных";
     }
 
     public Object getProductInfo(String productName) {
@@ -38,7 +38,7 @@ public class ProductService {
         List<String> productNames = new ArrayList<>();
 
         for (Product p : products) {
-            productNames.add(p.getName());
+            productNames.add("[ID: " + p.getId() + "] " + p.getName());
         }
 
         String productNamesString = productNames.toString();

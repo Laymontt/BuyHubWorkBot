@@ -57,7 +57,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String message = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
-            String username = update.getMessage().getChat().getUserName();
 
             if (message.startsWith("/start") && message.length() == 6)
                 startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
@@ -152,8 +151,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void startCommandReceived(long chatId, String name) {
         String answer = "Привет, " + name + ". BuyHubWorkBot - это телеграмм бот магазина BuyHub, созданный для упрощения работы его персонала.\n" +
-                "На данный момент в боте есть функция для упрощения копирования тегов, но в будущем будет добавлена база данных с тегами и категориями.\n" +
-                "С жалобами и предложениями к - https://t.me/laymonttt";
+                "С жалобами и предложениями по улучшению бота к - https://t.me/laymonttt.";
         sendMessage(chatId, answer);
     }
 
@@ -163,7 +161,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void helpCommandReceived(long chatId) {
-        sendMessage(chatId, "Список доступных команд: \n" +
+        sendMessage(chatId,
+                "Список доступных команд:\n" +
                 "\n" +
                 "/tags [список тегов] - на вход команде дается скопированный список тегов из карточки на проме (манипуляций с тегами не должно проводиться никаких)," +
                 " а на выходе получаем преобразованный к нужному виду список тегов, который можно сразу же вставлять в карточку.\n" +
