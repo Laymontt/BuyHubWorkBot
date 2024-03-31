@@ -3,7 +3,6 @@ package buyhub.prom.ua.buyhubworkbot.services;
 import buyhub.prom.ua.buyhubworkbot.models.Product;
 import buyhub.prom.ua.buyhubworkbot.repositories.ProductRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ public class ProductService {
         if (productRepository.findByName(productName).isPresent()) {
             return "Такой товар уже есть";
         }
-
         Product product = new Product();
         product.setName(productName);
         product.setCategories(categories.substring(1, categories.length() - 1));

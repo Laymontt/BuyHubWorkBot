@@ -16,4 +16,6 @@ public class Employee {
     private String name;
     @Column(name = "username")
     private String username;
+    @Column(name = "chatId")
+    private String chatId;
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendVideo;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
@@ -16,22 +17,24 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
     private final ProductRepository productRepository;
     private final EmployeeRepository employeeRepository;
-    private final BotConfig config;
+    private final BotConfig botConfig;
     private final ProductService productService;
     private final EmployeeService employeeService;
 
-    public TelegramBot(BotConfig config, ProductRepository productRepository, EmployeeRepository employeeRepository, ProductService productService, EmployeeService employeeService) {
-        this.config = config;
+    public TelegramBot(BotConfig botConfig, ProductRepository productRepository, EmployeeRepository employeeRepository, ProductService productService, EmployeeService employeeService) {
+        this.botConfig = botConfig;
         this.productRepository = productRepository;
         this.employeeRepository = employeeRepository;
         this.productService = productService;
         this.employeeService = employeeService;
+
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/start", "Начальное приветствие"));
         listOfCommands.add(new BotCommand("/tags", "Привести теги к нужному формату"));
@@ -44,7 +47,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/removeemployee", "Уволить сотрудника"));
         listOfCommands.add(new BotCommand("/getlistemployees", "Список сотрудников"));
         listOfCommands.add(new BotCommand("/getemployeeinfo", "Получить информацию о сотруднике"));
+//        listOfCommands.add(new BotCommand("/guides", "Получить список гайдов")); TODO
         listOfCommands.add(new BotCommand("/help", "Помощь по командам"));
+        listOfCommands.add(new BotCommand("/createavatar", "Создать аватарку"));
+        listOfCommands.add(new BotCommand("/sendmessagefor", "Отправить сообщение сотруднику"));
+        listOfCommands.add(new BotCommand("/sendmessageall", "Отправить сообщение всем сотрудникам"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -144,9 +151,56 @@ public class TelegramBot extends TelegramLongPollingBot {
                     return;
                 }
                 getEmployeeInfo(chatId, update.getMessage().getText());
+            } else if (message.startsWith("/guides")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                // TODO
+            } else if (message.startsWith("/sendmessagefor ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                String sendedMessage = sendMessageFor(update.getMessage().getText());
+                sendMessage(chatId, "Сообщение отправлено.\nТекст сообщения: " + sendedMessage);
+            } else if (message.startsWith("/sendmessageall ")) {
+                if (employeeRepository.findByUsername(update.getMessage().getChat().getUserName()).isEmpty()) {
+                    sendMessage(chatId, "Вы не сотрудник BuyHub.");
+                    return;
+                }
+                sendMessageForEmployees(message);
             } else
                 sendMessage(chatId, "На данный момент такой команды не существует.");
         }
+    }
+
+    private HashMap<String, Long> getEmployeesChatId() {
+        HashMap<String, Long> employeesChatId = new HashMap<>();
+        employeesChatId.put("Марк", 1778848754L);
+        employeesChatId.put("Александр", 445155581L);
+        employeesChatId.put("Алексей", 1459337756L);
+        employeesChatId.put("Станислав", 1054266579L);
+        employeesChatId.put("Оперштаб", -898717011L);
+        return employeesChatId;
+    }
+
+    private void sendMessageForEmployees(String text) {
+        text = text.substring(16);
+        HashMap<String, Long> employeesChatId = getEmployeesChatId();
+        sendMessage(employeesChatId.get("Марк"), text);
+        sendMessage(employeesChatId.get("Александр"), text);
+        sendMessage(employeesChatId.get("Алексей"), text);
+        sendMessage(employeesChatId.get("Станислав"), text);
+    }
+
+    private String sendMessageFor(String text) {
+        HashMap<String, Long> employeesChatId = getEmployeesChatId();
+        String[] textArr = text.substring(16).split(", ");
+        String employee = textArr[0];
+        String message = textArr[1];
+        sendMessage(employeesChatId.get(employee), message);
+        return message;
     }
 
     private void startCommandReceived(long chatId, String name) {
@@ -163,56 +217,68 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void helpCommandReceived(long chatId) {
         sendMessage(chatId,
                 "Список доступных команд:\n" +
-                "\n" +
-                "/tags [список тегов] - на вход команде дается скопированный список тегов из карточки на проме (манипуляций с тегами не должно проводиться никаких)," +
-                " а на выходе получаем преобразованный к нужному виду список тегов, который можно сразу же вставлять в карточку.\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/getlistproducts - получить список всех доступных товаров на данный момент\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/getproductinfo [название] - поиск тегов и категорий для карточки по названию." +
-                "\n\n" +
-                "Пример: /getproductinfo Обогреватель\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/createproductinfo [название] [категории] [теги (в преобразованном виде)]" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/createproductinfo Шлем, Шоломи, бронешоломи та каски, Військторг, Аксесуари та комплектуючі до екіпірування та спорядження, Бронешлем, Бронешлем кевларовый, Шлемы, бронешлемы и каски, Военный шлем, Кевларовый шлем, Баллистический шлем, Шлем тактический, Шлем боевой, Боевой шлем, Каски и шлема, Тактический шлем для страйкбола, Тактический шлем военный, Шлем каска кевлар, Шлем кевлар, Кевлар каска, Кевлар, Шлемы и каски кевларовые, Защитное снаряжение, Тактический военный шлем, Спортивное защитное снаряжение, Шлем 3а класса, Шлем 3 уровень, Шлем, Шлем 3а, Военное обмундирование, Военное снаряжение, Обмундирование, Охота военное обмундирование, Военное обмундирование магазин, Тактический защитный военный шлем, пуленепробиваемый тактический шлем, кевларовый шлем класса iiia, Тактический шлем сша, Армейский шлем, Шлем армейский 3 класса, Спортивные защитное снаряжение\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/deleteproductinfo [ID] - удаляет информацию о товаре по айдишнику (айди можно узнать с помощью /getproductinfo)" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/deleteproductinfo 13\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/editproductinfo [ID] [Параметр (1-3, 1 - название, 2 - категории, 3 - теги)] [Значение]" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/editproductinfo 1, 1, Тест\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/getlistemployees - получить список всех сотрудников\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/addemployee [TG_ID] [Name] - добавить сотрудника" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/addemployee laymontt, Алексей\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/removeemployee [TG_ID] - удалить сотрудника" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/removeemployee laymontt\n" +
-                "----------------------------------------------------------------------------------------------------" +
-                "\n" +
-                "/getemployeeinfo [Name] - получить информацию о сотруднике" +
-                "\n\n" +
-                "Пример:\n\n" +
-                "/getemployeeinfo Алексей");
+                        "\n" +
+                        "/tags [список тегов] - на вход команде дается скопированный список тегов из карточки на проме (манипуляций с тегами не должно проводиться никаких)," +
+                        " а на выходе получаем преобразованный к нужному виду список тегов, который можно сразу же вставлять в карточку.\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/getlistproducts - получить список всех доступных товаров на данный момент\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/getproductinfo [название] - поиск тегов и категорий для карточки по названию." +
+                        "\n\n" +
+                        "Пример: /getproductinfo Обогреватель\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/createproductinfo [название] [категории] [теги (в преобразованном виде)]" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/createproductinfo Шлем, Шоломи, бронешоломи та каски, Військторг, Аксесуари та комплектуючі до екіпірування та спорядження, Бронешлем, Бронешлем кевларовый, Шлемы, бронешлемы и каски, Военный шлем, Кевларовый шлем, Баллистический шлем, Шлем тактический, Шлем боевой, Боевой шлем, Каски и шлема, Тактический шлем для страйкбола, Тактический шлем военный, Шлем каска кевлар, Шлем кевлар, Кевлар каска, Кевлар, Шлемы и каски кевларовые, Защитное снаряжение, Тактический военный шлем, Спортивное защитное снаряжение, Шлем 3а класса, Шлем 3 уровень, Шлем, Шлем 3а, Военное обмундирование, Военное снаряжение, Обмундирование, Охота военное обмундирование, Военное обмундирование магазин, Тактический защитный военный шлем, пуленепробиваемый тактический шлем, кевларовый шлем класса iiia, Тактический шлем сша, Армейский шлем, Шлем армейский 3 класса, Спортивные защитное снаряжение\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/deleteproductinfo [ID] - удаляет информацию о товаре по айдишнику (айди можно узнать с помощью /getproductinfo)" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/deleteproductinfo 13\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/editproductinfo [ID] [Параметр (1-3, 1 - название, 2 - категории, 3 - теги)] [Значение]" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/editproductinfo 1, 1, Тест\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/getlistemployees - получить список всех сотрудников\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/addemployee [TG_ID] [Name] - добавить сотрудника" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/addemployee laymontt, Алексей\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/removeemployee [TG_ID] - удалить сотрудника" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/removeemployee laymontt\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/getemployeeinfo [Name] - получить информацию о сотруднике" +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/getemployeeinfo Алексей\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/sendmessagefor [Name] - отправить сообщение сотруднику от лица бота." +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/sendmessagefor Алексей, Тест\n" +
+                        "----------------------------------------------------------------------------------------------------" +
+                        "\n" +
+                        "/sendmessageall [Text] - отправить сообщение всем сотрудникам (Александр, Алексей, Станислав, Марк) от лица бота." +
+                        "\n\n" +
+                        "Пример:\n\n" +
+                        "/sendmessageall Тест");
     }
 
     private void createProductInfo(long chatId, String text) {
@@ -248,6 +314,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void getListProducts(long chatId) {
         sendMessage(chatId, productService.getListProducts().toString());
     }
+
+    // TODO
+//    private void getListGuides(long chatId) {
+//
+//    }
 
     private void deleteProductInfo(long chatId, long id) {
         String productName = productService.deleteProductInfo(id).toString();
@@ -297,13 +368,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    // TODO
+    private void sendVideo(long chatId) {
+        SendVideo sendVideo = new SendVideo();
+        sendVideo.setChatId(String.valueOf(chatId));
+//        sendVideo.setVideo(video);
+    }
+
     @Override
     public String getBotUsername() {
-        return config.getBotName();
+        return botConfig.getBotName();
     }
 
     @Override
     public String getBotToken() {
-        return config.getToken();
+        return botConfig.getToken();
     }
 }
