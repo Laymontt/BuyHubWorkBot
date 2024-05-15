@@ -47,9 +47,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/removeemployee", "Уволить сотрудника"));
         listOfCommands.add(new BotCommand("/getlistemployees", "Список сотрудников"));
         listOfCommands.add(new BotCommand("/getemployeeinfo", "Получить информацию о сотруднике"));
-//        listOfCommands.add(new BotCommand("/guides", "Получить список гайдов")); TODO
+//        listOfCommands.add(new BotCommand("/guides", "Получить список гайдов"));
         listOfCommands.add(new BotCommand("/help", "Помощь по командам"));
-        listOfCommands.add(new BotCommand("/createavatar", "Создать аватарку"));
+//        listOfCommands.add(new BotCommand("/createavatar", "Создать аватарку"));
         listOfCommands.add(new BotCommand("/sendmessagefor", "Отправить сообщение сотруднику"));
         listOfCommands.add(new BotCommand("/sendmessageall", "Отправить сообщение всем сотрудникам"));
         try {
@@ -177,7 +177,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private HashMap<String, Long> getEmployeesChatId() {
         HashMap<String, Long> employeesChatId = new HashMap<>();
-        employeesChatId.put("Марк", 1778848754L);
+        employeesChatId.put("Олег", 5400824243L);
         employeesChatId.put("Александр", 445155581L);
         employeesChatId.put("Алексей", 1459337756L);
         employeesChatId.put("Станислав", 1054266579L);
@@ -188,7 +188,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendMessageForEmployees(String text) {
         text = text.substring(16);
         HashMap<String, Long> employeesChatId = getEmployeesChatId();
-        sendMessage(employeesChatId.get("Марк"), text);
+        sendMessage(employeesChatId.get("Олег"), text);
         sendMessage(employeesChatId.get("Александр"), text);
         sendMessage(employeesChatId.get("Алексей"), text);
         sendMessage(employeesChatId.get("Станислав"), text);
@@ -275,7 +275,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                         "/sendmessagefor Алексей, Тест\n" +
                         "----------------------------------------------------------------------------------------------------" +
                         "\n" +
-                        "/sendmessageall [Text] - отправить сообщение всем сотрудникам (Александр, Алексей, Станислав, Марк) от лица бота." +
+                        "/sendmessageall [Text] - отправить сообщение всем сотрудникам (Александр, Алексей, Станислав, Олег) от лица бота." +
                         "\n\n" +
                         "Пример:\n\n" +
                         "/sendmessageall Тест");
@@ -315,7 +315,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, productService.getListProducts().toString());
     }
 
-    // TODO
 //    private void getListGuides(long chatId) {
 //
 //    }
