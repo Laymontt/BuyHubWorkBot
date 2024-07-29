@@ -13,15 +13,18 @@ import java.util.List;
 public class EmployeeService {
     private final EmployeeRepository employeeRepository;
 
+    // TODO
     public String addEmployee(String text) {
         String[] textArr = text.substring(13).split(", ");
         String username = textArr[0];
         String name = textArr[1];
+//        String chatId = textArr[2];
         if (employeeRepository.findByUsername(username).isPresent())
             return "Данный сотрудник уже существует";
         Employee employee = new Employee();
         employee.setName(name);
         employee.setUsername(username);
+//        employee.setChatId(chatId);
         employeeRepository.save(employee);
         return employee.getName();
     }

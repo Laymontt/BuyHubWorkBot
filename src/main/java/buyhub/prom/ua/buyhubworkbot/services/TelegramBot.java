@@ -176,7 +176,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private HashMap<String, Long> getEmployeesChatId() {
         HashMap<String, Long> employeesChatId = new HashMap<>();
-        employeesChatId.put("Олег", 5400824243L);
+//        employeesChatId.put("Олег", 5400824243L);
         employeesChatId.put("Александр", 445155581L);
         employeesChatId.put("Алексей", 1459337756L);
         employeesChatId.put("Станислав", 1054266579L);
@@ -187,7 +187,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void sendMessageForEmployees(String text) {
         text = text.substring(16);
         HashMap<String, Long> employeesChatId = getEmployeesChatId();
-        sendMessage(employeesChatId.get("Олег"), text);
         sendMessage(employeesChatId.get("Александр"), text);
         sendMessage(employeesChatId.get("Алексей"), text);
         sendMessage(employeesChatId.get("Станислав"), text);
@@ -209,10 +208,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void tagsCommandReceived(long chatId, String text) {
-        String tags = Arrays.toString(text.substring(6).replace('×', ',').split(","));
+        String tags = Arrays.toString(text.substring(6).replace('×', ',').replaceAll("\n", "").split(","));
         sendMessage(chatId, tags.substring(1, tags.length() - 1));
     }
 
+    // TODO add in addEmployee chatId
     private void helpCommandReceived(long chatId) {
         sendMessage(chatId,
                 """
@@ -320,6 +320,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         String answer = productService.editProductInfo(textArr).toString();
         sendMessage(chatId, answer);
     }
+
+    // TODO
+//    private void banUser(String text) {
+//        String[] textArr = text.substring(5).split(", ");
+//        String chatId = textArr[0];
+//        String reason = textArr[1];
+//    }
 
     private void addEmployee(long chatId, String text) {
         String employeeName = employeeService.addEmployee(text);
